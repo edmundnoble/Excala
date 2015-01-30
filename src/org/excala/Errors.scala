@@ -11,6 +11,7 @@ object Errors {
   sealed trait Error
 
   case object ExpectTimedOut extends Error
+  case object EOF extends Error
   case class ExceptionContainer(ex: RuntimeException) extends Error
 
   implicit def ErrorToString(err: Error): String = {

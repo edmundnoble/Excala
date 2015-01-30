@@ -3,10 +3,6 @@ package org.excala
 import java.io.{InputStream, OutputStream}
 
 import com.github.nscala_time.time.Imports._
-import org.excala.Errors._
-import org.excala.StringUtils._
-
-import scala.annotation.tailrec
 import scala.language.implicitConversions
 
 /**

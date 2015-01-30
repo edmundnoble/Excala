@@ -62,11 +62,11 @@ class ExpectTests extends FlatSpec with Matchers {
   }
 
   "Expecting an empty String" should "return success" in {
-    nullInputStream.expectTimeout("", 0.seconds) shouldBe win(())
+    nullInputStream.expectTimeout("", 0.seconds) shouldBe win((""))
   }
 
   "Expecting null terminators" should "return success" in {
-    nullInputStream.expectTimeout("\0\0\0\0\0", 0.seconds) shouldBe win(())
+    nullInputStream.expectTimeout("\0\0\0\0\0", 0.seconds) shouldBe win(("\0\0\0\0\0"))
   }
 
   "Expecting a string twice when it's received once" should "fail" in {

@@ -7,6 +7,8 @@ import org.excala.Errors._
 import org.excala.Excala.ImplicitDuration
 import org.excala.StringUtils._
 
+import scala.util.matching._
+
 import scala.annotation.tailrec
 
 /**
@@ -40,16 +42,23 @@ class ExpectableImplicits {
       expectDeadline(str, DateTime.now + timeout)
     }
 
-    @tailrec
-    final def expectDeadline(str: String, deadline: DateTime): Result[Unit] = {
-      if (str.isEmpty || isNull(str))
-        win(())
-      else if (DateTime.now > deadline)
-        lose(ExpectTimedOut)
-      else if (implicitly[Expectable[F]].inStream(f).read().toChar == str.head)
-        expectDeadline(str.tail, deadline)
-      else
-        expectDeadline(str, deadline)
+    def expectDeadline(str: String, deadline: DateTime): Result[String] = {
+      if (isNull(str)) win(str)
+      else expectDeadline(new Regex(str), deadline)
+    }
+
+    def expectDeadline(regex: Regex, deadline: DateTime): Result[String] = {
+      @tailrec
+      def go(regex: Regex, deadline: DateTime, sofar: String = ""): Result[String] = {
+        if (DateTime.now > deadline) lose(ExpectTimedOut)
+        else regex.findFirstIn(sofar) match {
+          case Some(s) => win(s)
+          case None =>
+            val read = implicitly[Expectable[F]].inStream(f).read()
+            go(regex, deadline, sofar + read.toChar)
+        }
+      }
+      go(regex, deadline, "")
     }
 
     def sendLine(str: String) = send(str + "\r\n")
