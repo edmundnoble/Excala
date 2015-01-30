@@ -1,10 +1,11 @@
 package org.excala.tests
 
-import java.io.{PipedOutputStream, PipedInputStream, InputStream}
+import java.io._
 
 import com.github.nscala_time.time.Imports._
 import org.excala.Errors._
-import org.excala.Excala
+import org.excala.Excala._
+import org.excala._
 import org.scalatest._
 
 /**
@@ -12,7 +13,9 @@ import org.scalatest._
  */
 class ExpectTests extends FlatSpec with Matchers {
 
-  implicit def dummyInputStream: InputStream = new InputStream() {
+  implicit val millis200 = ImplicitDuration(200.millis)
+
+  def nullInputStream: InputStream = new InputStream() {
     override def read() = '0'
   }
 
@@ -35,31 +38,43 @@ class ExpectTests extends FlatSpec with Matchers {
     }
   }
 
+  implicit object OutputStreamExpectable$ extends Expectable[OutputStream] {
+    def outStream(f: OutputStream) = f
+    def inStream(f: OutputStream) = null
+    def alive(f: OutputStream) = true
+  }
+
+  implicit object InputStreamExpectable$ extends Expectable[InputStream] {
+    def outStream(f: InputStream) = null
+    def inStream(f: InputStream) = f
+    def alive(f: InputStream) = true
+  }
+
   import org.excala.Excala._
 
   "Expects" should "time out after their timeouts" in {
-    expectTimeout("Hello", 0.second)
+    val stream = nullInputStream
+    stream.expectTimeout("Hello", 0.second)
   }
 
   "Expecting a nonempty String with zero timeout" should "fail immediately" in {
-    val testString = "HELLO"
-    expectTimeout(testString, 0.seconds) shouldBe lose(ExpectTimedOut)
+    nullInputStream.expectTimeout("HELLO", 0.seconds) shouldBe lose(ExpectTimedOut)
   }
 
   "Expecting an empty String" should "return success" in {
-    expectTimeout("", 0.seconds) shouldBe win(())
+    nullInputStream.expectTimeout("", 0.seconds) shouldBe win(())
   }
 
   "Expecting null terminators" should "return success" in {
-    expectTimeout("\0\0\0\0\0", 0.seconds) shouldBe win(())
+    nullInputStream.expectTimeout("\0\0\0\0\0", 0.seconds) shouldBe win(())
   }
 
   "Expecting a string twice when it's received once" should "fail" in {
       val str = "HALLOO"
-      implicit val stream = new StringOnceStream(str)
+      val stream = new StringOnceStream(str)
       assertResult(lose(ExpectTimedOut)) {
-        for (start <- expectTimeout(str, 200.millis);
-             end <- expectTimeout(str, 200.millis))
+        for (start <- stream.expect(str);
+             end <- stream.expect(str))
         yield end
       }
   }
@@ -71,10 +86,13 @@ class ExpectTests extends FlatSpec with Matchers {
     val lineLength = line.length
     val bufferLength = lineLength + 2
     val buffer = new Array[Byte](bufferLength)
-    sendLine(line)
+    pipedOut sendLine line
     pipedIn read(buffer, 0, bufferLength)
     new String(buffer, "ASCII") shouldBe line + "\r\n"
-    pipedIn read() shouldBe ' '
+  }
+
+  "Reading an EOF" should "return an EOF error" in {
+    val EOF = -1.toChar
   }
 
 }

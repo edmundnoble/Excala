@@ -11,9 +11,13 @@ object Errors {
   sealed trait Error
 
   case object ExpectTimedOut extends Error
+  case class ExceptionContainer(ex: RuntimeException) extends Error
 
   implicit def ErrorToString(err: Error): String = {
     err match {
+      case ExceptionContainer(ex: Exception) =>
+        ex.printStackTrace(); ""
+
       case ExpectTimedOut => "Expect timed out!"
     }
   }
