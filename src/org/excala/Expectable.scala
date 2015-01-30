@@ -38,20 +38,19 @@ class ExpectableImplicits {
       expectTimeout(str, timeout.duration)
     }
 
-    def expectTimeout(str: String, timeout: Duration) = {
-      expectDeadline(str, DateTime.now + timeout)
-    }
+    def expectTimeout(str: String, timeout: Duration) = expectDeadline(str, DateTime.now + timeout)
 
-    def expectDeadline(str: String, deadline: DateTime): Result[String] = {
-      if (isNull(str)) win(str)
+    val emptyMatch = new Regex("").findFirstMatchIn("").get
+    def expectDeadline(str: String, deadline: DateTime): Result[Regex.Match] = {
+      if (isNull(str)) win(emptyMatch)
       else expectDeadline(new Regex(str), deadline)
     }
 
-    def expectDeadline(regex: Regex, deadline: DateTime): Result[String] = {
+    def expectDeadline(regex: Regex, deadline: DateTime): Result[Regex.Match] = {
       @tailrec
-      def go(regex: Regex, deadline: DateTime, sofar: String = ""): Result[String] = {
+      def go(regex: Regex, deadline: DateTime, sofar: String = ""): Result[Regex.Match] = {
         if (DateTime.now > deadline) lose(ExpectTimedOut)
-        else regex.findFirstIn(sofar) match {
+        else regex.findFirstMatchIn(sofar) match {
           case Some(s) => win(s)
           case None =>
             val read = implicitly[Expectable[F]].inStream(f).read()
