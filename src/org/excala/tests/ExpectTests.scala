@@ -7,6 +7,12 @@ import org.excala.Errors._
 import org.excala.Excala._
 import org.excala._
 import org.scalatest._
+import org.scalatest.matchers.{BePropertyMatchResult, BePropertyMatcher}
+import org.scalatest.concurrent.Eventually._
+import scala.util.matching._
+
+import scalaz._
+import Scalaz._
 
 /**
  * Created by Edmund on 2015-01-24.
@@ -15,58 +21,63 @@ class ExpectTests extends FlatSpec with Matchers {
 
   implicit val millis200 = ImplicitDuration(200.millis)
 
+  def failure[A, B] = new BePropertyMatcher[A \/ B] {
+    def apply(dis: A \/ B) = BePropertyMatchResult(dis.isLeft, "left value")
+  }
+  def success[A, B] = new BePropertyMatcher[A \/ B] {
+    def apply(dis: A \/ B) = BePropertyMatchResult(dis.isRight, "right value")
+  } 
+
   def nullInputStream: InputStream = new InputStream() {
     override def read() = '0'
+    override def available() = 1
   }
 
   class StringOnceStream(val str: String) extends InputStream {
     var pos = 0
     override def read() = {
-      val res = if (pos >= str.length) '\0'
+      val res = if (pos >= str.length) '\n'
                 else str(pos)
       pos += 1
       res
     }
+    override def available() = str.length - pos
   }
 
   class StringForeverStream(val str: String) extends InputStream {
     var pos = 0
     override def read() = {
-      val res = str(pos % str.length)
+      val res = if (pos == str.length) '\n' else str(pos)
       pos += 1
+      pos %= str.length + 1
       res
     }
+    override def available() = str.length
   }
 
-  implicit object OutputStreamExpectable$ extends Expectable[OutputStream] {
-    def outStream(f: OutputStream) = f
-    def inStream(f: OutputStream) = null
-    def alive(f: OutputStream) = true
-  }
-
-  implicit object InputStreamExpectable$ extends Expectable[InputStream] {
-    def outStream(f: InputStream) = null
-    def inStream(f: InputStream) = f
-    def alive(f: InputStream) = true
-  }
-
-  import org.excala.Excala._
-
-  "Expects" should "time out after their timeouts" in {
+  "Expects" should "time out after their timeouts" ignore {
     val stream = nullInputStream
-    stream.expectTimeout("Hello", 0.second)
+    val mils = 100
+    val timeout = mils millis
+    val tolerance = 20
+    val regex = "Hello".r
+    val then = System.currentTimeMillis()
+    stream.expectTimeout(regex, timeout) shouldBe a(failure)
+    val now = System.currentTimeMillis()
+    val diff = now - then
+    diff shouldBe mils +- tolerance
   }
 
-  "Expecting a nonempty String with zero timeout" should "fail immediately" in {
-    nullInputStream.expectTimeout("HELLO", 0.seconds) shouldBe lose(ExpectTimedOut)
+  "Expecting a nonempty Regex with zero timeout" should "fail immediately" in {
+    nullInputStream.expectTimeout("HELLO".r, 0.seconds) shouldBe lose(ExpectTimedOut)
   }
 
   "Expecting an empty String" should "return success" in {
-    assert(nullInputStream.expectTimeout("", 0.seconds).isRight)
+    nullInputStream.expect("") shouldBe a (success)
   }
 
   "Expecting null terminators" should "return success" in {
-    assert(nullInputStream.expectTimeout("\0\0\0\0\0", 0.seconds).isRight)
+    nullInputStream.expect("\0\0\0\0\0") shouldBe a (success)
   }
 
   "Expecting a string twice when it's received once" should "fail" in {
@@ -91,8 +102,19 @@ class ExpectTests extends FlatSpec with Matchers {
     new String(buffer, "ASCII") shouldBe line + "\r\n"
   }
 
-  "Reading an EOF" should "return an EOF error" in {
-    val EOF = -1.toChar
+  "Expecting a string" should "work when it's sent" in {
+    val str = "Test"
+    val stream = new StringForeverStream(str)
+    val result = stream.expect(str)
+    result should be a success
+  }
+
+  "Expecting a regex" should "work when it's sent" in {
+    val regex = "[0-9]+".r
+    val stream = new StringForeverStream("1234")
+    val result = stream.expectTimeout(regex, 1 second)
+    result should be a success
+    result.map(_ shouldBe "1234")
   }
 
 }
