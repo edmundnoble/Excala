@@ -42,6 +42,14 @@ class ExpectableImplicits {
     def alive(f: InputStream) = true
   }
 
+  implicit object ProcessExpectable extends Expectable[Process] {
+    def outStream(f: Process) = f.getOutputStream
+
+    def inStream(f: Process) = f.getInputStream
+
+    def alive(f: Process) = f.isAlive
+  }
+
   val BusyWaitPeriod: Long = 15
 
   implicit class SlaveOps[-F: Expectable](f: F) {
@@ -81,13 +89,13 @@ class ExpectableImplicits {
     }
 
     def expectDeadline(regex: Regex, deadline: DateTime): Result[String] = {
-      def go(regex: Regex): Result[String] = {
-        val line = waitForLine(deadline.toDate.getTime)
-        line.flatMap(regex.findFirstIn(_) match {
-          case Some(s) => win(s)
-          case None => go(regex)
-        })
-      }
+      def go(regex: Regex): Result[String] =
+        for (line <- waitForLine(deadline.toDate.getTime);
+             res <- regex.findFirstIn(line) match {
+               case Some(s) => win(s)
+               case None => go(regex)
+             }) yield res
+
       go(regex)
     }
 

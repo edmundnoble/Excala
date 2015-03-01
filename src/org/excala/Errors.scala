@@ -8,10 +8,13 @@ import scalaz._
  * Created by Edmund on 2015-01-23.
  */
 object Errors {
+
   sealed abstract class Error
 
   case object ExpectTimedOut extends Error
+
   case object EOF extends Error
+
   case class ExceptionContainer(ex: RuntimeException) extends Error
 
   implicit val ErrorEqual = new Equal[Error] {
@@ -27,10 +30,11 @@ object Errors {
 
   implicit def ErrorToString(err: Error): String = {
     err match {
-      case ExceptionContainer(ex: Exception) =>
-        ex.printStackTrace(); ""
+      case ExceptionContainer(ex: Exception) => ex getMessage
 
       case ExpectTimedOut => "Expect timed out!"
+
+      case EOF => "End of File!"
     }
   }
 
