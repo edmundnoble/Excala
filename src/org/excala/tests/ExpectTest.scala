@@ -11,6 +11,7 @@ import scalaz._
 import Scalaz._
 
 /**
+ * Tests for expect(...) and variants.
  * Created by Edmund on 2015-03-01.
  */
 class ExpectTest extends ExpectTestSpec {
@@ -20,7 +21,7 @@ class ExpectTest extends ExpectTestSpec {
     val timeout = 500 millis
     val regex = str.r
     stream.start()
-    val result = stream.expectTimeout(regex, timeout)
+    val result = stream expectTimeout(regex, timeout)
     result should be a success
   }
 

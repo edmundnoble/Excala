@@ -11,16 +11,19 @@ import scalaz.Scalaz._
 import scalaz._
 
 /**
+ * Default specification for tests. Contains some convenience methods.
  * Created by Edmund on 2015-01-24.
  */
 trait ExpectTestSpec extends FlatSpec with Matchers with ExpectTags {
 
   implicit val millis200 = ImplicitDuration(50.millis)
 
+  /// Usable as in: result should be a failure
   def failure[A, B] = new BePropertyMatcher[A \/ B] {
     def apply(dis: A \/ B) = BePropertyMatchResult(dis.isLeft, "left value")
   }
 
+  /// Usable as in: result should be a success
   def success[A, B] = new BePropertyMatcher[A \/ B] {
     def apply(dis: A \/ B) = BePropertyMatchResult(dis.isRight, "right value")
   }
