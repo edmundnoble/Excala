@@ -15,7 +15,7 @@ import Scalaz._
  * Created by Edmund on 2015-03-01.
  */
 class ExpectTests extends ExpectTestSpec {
-  "Expects" should "not time out before they should" taggedAs TimedTest in {
+  "An Expect" should "not time out before it should" taggedAs TimedTest in {
     val str = "Hello"
     val stream = DelayedStringStream(str, 450)
     val timeout = 500 millis
@@ -25,7 +25,7 @@ class ExpectTests extends ExpectTestSpec {
     result should be a success
   }
 
-  "Expects" should "time out after their timeouts" taggedAs TimedTest in {
+  it should "time out after its timeout" taggedAs TimedTest in {
     val str = "Hello"
     val stream = DelayedStringStream(str, 500)
     val timeout = 450 millis
@@ -75,8 +75,20 @@ class ExpectTests extends ExpectTestSpec {
   "Expecting a regex" should "work when it's sent" in {
     val regex = "[0-9]+".r
     val stream = StringForeverStream("1234")
-    val result = stream expectTimeout (regex, 1 second)
+    val result = stream expectTimeout(regex, 1 second)
     result should be a success
-    result map(_ shouldBe "1234")
+    result map (_ shouldBe "1234")
+  }
+
+  "One complicated-ass expect" should "work" in {
+    val stream = StringListStream("Hello!", "My name is:", "Edmund")
+    val n = for (name <- chain(stream expect "Hello",
+      stream expect "name is",
+      stream expectLine)) yield name
+    n should be a success
+    n map {
+      _ shouldBe "Edmund\n"
+    }
+
   }
 }

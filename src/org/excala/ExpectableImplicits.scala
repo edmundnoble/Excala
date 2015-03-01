@@ -99,6 +99,10 @@ trait ExpectableImplicits {
         expectTimeout(new Regex(Regex.quote(str)), timeout.duration)
     }
 
+    def expectLine(implicit timeout: ImplicitDuration): Result[String] = {
+      waitForLine(System.currentTimeMillis() + timeout.duration.getMillis)
+    }
+
     def sendLine(str: String) = send(str + "\r\n")
 
     def send(str: String) = outStream write (str getBytes "UTF-8")

@@ -27,12 +27,12 @@ trait ExpectTestSpec extends FlatSpec with Matchers with ExpectTags {
 
   /// Usable as in: result should be a failure
   def failure[A, B] = new BePropertyMatcher[A \/ B] {
-    def apply(dis: A \/ B) = BePropertyMatchResult(dis.isLeft, "left value")
+    def apply(dis: A \/ B) = BePropertyMatchResult(dis.isLeft, "failure")
   }
 
   /// Usable as in: result should be a success
   def success[A, B] = new BePropertyMatcher[A \/ B] {
-    def apply(dis: A \/ B) = BePropertyMatchResult(dis.isRight, "right value")
+    def apply(dis: A \/ B) = BePropertyMatchResult(dis.isRight, "success")
   }
 
   def nullInputStream: InputStream = new InputStream() {
@@ -97,5 +97,7 @@ trait ExpectTestSpec extends FlatSpec with Matchers with ExpectTags {
     }
 
   }
+
+  def StringListStream(str: String*) = StringForeverStream(str.mkString("\n"))
 
 }

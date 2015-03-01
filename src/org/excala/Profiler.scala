@@ -22,7 +22,7 @@ object Profiler extends App {
     override def available() = str.length
   }
 
-  val str = "Test"
+  val str = "Testing 123"
 
   val stream = new StringForeverStream(str)
 
@@ -30,9 +30,11 @@ object Profiler extends App {
 
   implicit val timeout = ImplicitDuration(100 millis)
 
+  val start = System.currentTimeMillis()
+  var result = win("")
   while (i < 100000) {
-    stream.expect(str)
-    Thread.sleep(10)
+    chain(result, stream.expect(str))
     i += 1
   }
+  println((System.currentTimeMillis() - start) / 100000.0)
 }
