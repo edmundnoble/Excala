@@ -3,16 +3,7 @@ package org.excala
 import java.io.InputStream
 
 import com.github.nscala_time.time.Imports._
-import org.excala.Errors._
 import org.excala.Excala._
-import org.excala._
-import org.scalatest._
-import org.scalatest.matchers.{BePropertyMatchResult, BePropertyMatcher}
-import org.scalatest.concurrent.Eventually._
-import scala.util.matching._
-
-import scalaz._
-import Scalaz._
 
 /**
  * Created by Edmund on 2015-02-24.

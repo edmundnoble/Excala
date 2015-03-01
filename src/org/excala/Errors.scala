@@ -7,7 +7,7 @@ import scalaz._
 /**
  * Created by Edmund on 2015-01-23.
  */
-object Errors {
+trait Errors {
 
   sealed abstract class Error
 
@@ -34,7 +34,8 @@ object Errors {
 
       case ExpectTimedOut => "Expect timed out!"
 
-      case EOF => "End of File!"
+      case EOF => "End " +
+        "of File!"
     }
   }
 

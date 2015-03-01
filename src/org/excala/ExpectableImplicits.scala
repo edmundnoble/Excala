@@ -1,30 +1,20 @@
 package org.excala
 
 import java.io._
-import java.nio._
-import java.nio.channels.{AsynchronousFileChannel, AsynchronousChannel}
-import java.nio.channels.spi.AbstractInterruptibleChannel
-import java.nio.file.WatchService
-import java.util.regex.Pattern
-import java.util.{Scanner, Date}
+
 import com.github.nscala_time.time.Implicits._
-
-import org.excala.Errors._
 import org.excala.Excala.ImplicitDuration
-import org.excala.StringUtils._
-import org.joda.time.{Duration, DateTime}
-
-import scala.util.matching._
+import org.joda.time.{DateTime, Duration}
 
 import scala.annotation.tailrec
-
+import scala.util.matching._
 import scalaz._
-import Scalaz._
 
 /**
  * Created by Edmund on 2015-02-23.
  */
-class ExpectableImplicits {
+trait ExpectableImplicits {
+  self : Errors =>
 
   implicit object OutputStreamExpectable extends Expectable[OutputStream] {
     def outStream(f: OutputStream) = f

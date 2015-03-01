@@ -1,23 +1,18 @@
 package org.excala
 
-import java.io.{InputStream, OutputStream}
-import java.nio.file._
 import java.util.Date
 
-import java.nio.file.StandardWatchEventKinds._
-
-import org.excala.Errors._
 import org.joda.time.Duration
 
 import scalaz._
 import Scalaz._
 
 /**
+ * Your one-stop shop for imports.
  * Created by Edmund on 2015-01-23.
  */
 
-
-object Excala extends ExpectableImplicits {
+object Excala extends Errors with ExpectableImplicits {
 
   case class ImplicitDuration(duration: Duration)
 
