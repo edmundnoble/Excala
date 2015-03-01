@@ -30,6 +30,6 @@ object Excala extends Errors with ExpectableImplicits {
 
   def chain[A](funs: CBN[Result[A]]*): Result[A] = {
     val otherfuns = funs.map(_.f)
-    otherfuns.foldLeft(otherfuns.head())(_ >> _())
+    otherfuns.tail.foldLeft(otherfuns.head())(_ >> _())
   }
 }

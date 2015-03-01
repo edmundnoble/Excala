@@ -16,6 +16,13 @@ import scalaz._
  */
 trait ExpectTestSpec extends FlatSpec with Matchers with ExpectTags {
 
+  def timed[A](fun: => A): (A, Long) = {
+    val start = System.currentTimeMillis()
+    val result = fun
+    val end = System.currentTimeMillis()
+    (result, end - start)
+  }
+
   implicit val millis200 = ImplicitDuration(50.millis)
 
   /// Usable as in: result should be a failure

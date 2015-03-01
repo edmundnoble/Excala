@@ -14,7 +14,7 @@ import Scalaz._
  * Tests for expect(...) and variants.
  * Created by Edmund on 2015-03-01.
  */
-class ExpectTest extends ExpectTestSpec {
+class ExpectTests extends ExpectTestSpec {
   "Expects" should "not time out before they should" taggedAs TimedTest in {
     val str = "Hello"
     val stream = DelayedStringStream(str, 450)
@@ -34,7 +34,6 @@ class ExpectTest extends ExpectTestSpec {
     val result = stream.expectTimeout(regex, timeout)
     result should be a failure
   }
-
 
   "Expecting a nonempty Regex with zero timeout" should "fail immediately" in {
     nullInputStream.expectTimeout("HELLO".r, 0 seconds) should be a failure
