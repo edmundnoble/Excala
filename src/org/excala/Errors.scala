@@ -17,25 +17,13 @@ trait Errors {
 
   case class ExceptionContainer(ex: RuntimeException) extends Error
 
-  implicit val ErrorEqual = new Equal[Error] {
-    def equal(a: Error, b: Error) = a match {
-      case ExpectTimedOut => b == ExpectTimedOut
-      case EOF => b == EOF
-      case ExceptionContainer(ex) => b match {
-        case ExceptionContainer(ex2) => ex == ex2
-        case _ => false
-      }
-    }
-  }
-
   implicit def ErrorToString(err: Error): String = {
     err match {
-      case ExceptionContainer(ex: Exception) => ex getMessage
+      case ExceptionContainer(ex) => (ex getStackTrace) mkString "\n"
 
       case ExpectTimedOut => "Expect timed out!"
 
-      case EOF => "End " +
-        "of File!"
+      case EOF => "End of File!"
     }
   }
 

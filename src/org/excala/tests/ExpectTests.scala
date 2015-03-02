@@ -14,40 +14,44 @@ import Scalaz._
  * Tests for expect(...) and variants.
  * Created by Edmund on 2015-03-01.
  */
-class ExpectTests extends ExpectTestSpec {
+class ExpectTests extends ExpectTestSpec with TestImplicits {
   "An Expect" should "not time out before it should" taggedAs TimedTest in {
     val str = "Hello"
     val stream = DelayedStringStream(str, 450)
-    val timeout = 500 millis
+    implicit val timeout: Duration = 500 millis
     val regex = str.r
     stream.start()
-    val result = stream expectTimeout(regex, timeout)
+    val result = stream expect regex
     result should be a success
   }
 
   it should "time out after its timeout" taggedAs TimedTest in {
     val str = "Hello"
     val stream = DelayedStringStream(str, 500)
-    val timeout = 450 millis
+    implicit val timeout: Duration = 450 millis
     val regex = str.r
     stream.start()
-    val result = stream.expectTimeout(regex, timeout)
+    val result = stream expect regex
     result should be a failure
   }
 
   "Expecting a nonempty Regex with zero timeout" should "fail immediately" in {
-    nullInputStream.expectTimeout("HELLO".r, 0 seconds) should be a failure
+    import ZeroDuration._
+    nullInputStream expect "HELLO".r should be a failure
   }
 
   "Expecting an empty String" should "return success" in {
-    nullInputStream.expect("") should be a success
+    import ZeroDuration._
+    nullInputStream expect "" should be a success
   }
 
   "Expecting null terminators" should "return success" in {
-    nullInputStream.expect("\0\0\0\0\0") should be a success
+    import ZeroDuration._
+    nullInputStream expect "\0\0\0\0\0" should be a success
   }
 
   "Expecting a string twice when it's received once" should "fail" in {
+    import ZeroDuration._
     val str = "HALLOO"
     val stream = StringOnceStream(str)
     chain(stream expect str, stream expect str) should be a failure
@@ -67,6 +71,7 @@ class ExpectTests extends ExpectTestSpec {
 
   "Expecting a string" should "work when it's sent" in {
     val str = "Test"
+    implicit val timeout: Duration = 1 second
     val stream = StringForeverStream(str)
     val result = stream expect str
     result should be a success
@@ -75,12 +80,14 @@ class ExpectTests extends ExpectTestSpec {
   "Expecting a regex" should "work when it's sent" in {
     val regex = "[0-9]+".r
     val stream = StringForeverStream("1234")
-    val result = stream expectTimeout(regex, 1 second)
+    implicit val timeout: Duration = 1 second
+    val result = stream expect regex
     result should be a success
     result map (_ shouldBe "1234")
   }
 
   "One complicated-ass expect" should "work" in {
+    import ShortDuration._
     val stream = StringListStream("Hello!", "My name is:", "Edmund")
     val n = for (name <- chain(stream expect "Hello",
       stream expect "name is",

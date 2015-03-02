@@ -14,8 +14,6 @@ import Scalaz._
 
 object Excala extends Errors with ExpectableImplicits {
 
-  case class ImplicitDuration(duration: Duration)
-
   trait TimeGetter {
     def getTime: Date
   }
@@ -24,7 +22,7 @@ object Excala extends Errors with ExpectableImplicits {
 
   def exec(programName: String): Process = runtime.exec(programName)
 
-  case class CBN[+A](f: () => A)
+  case class CBN[+A](f: () => A) extends AnyVal
 
   implicit def cbn2CBN[A](a: => A): CBN[A] = CBN(() => a)
 

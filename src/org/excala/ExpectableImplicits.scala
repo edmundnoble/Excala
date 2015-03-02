@@ -3,7 +3,6 @@ package org.excala
 import java.io._
 
 import com.github.nscala_time.time.Implicits._
-import org.excala.Excala.ImplicitDuration
 import org.joda.time.{DateTime, Duration}
 
 import scala.annotation.tailrec
@@ -14,23 +13,7 @@ import scalaz._
  * Created by Edmund on 2015-02-23.
  */
 trait ExpectableImplicits {
-  self : Errors =>
-
-  implicit object OutputStreamExpectable extends Expectable[OutputStream] {
-    def outStream(f: OutputStream) = f
-
-    def inStream(f: OutputStream) = null
-
-    def alive(f: OutputStream) = true
-  }
-
-  implicit object InputStreamExpectable extends Expectable[InputStream] {
-    def outStream(f: InputStream) = null
-
-    def inStream(f: InputStream) = f
-
-    def alive(f: InputStream) = true
-  }
+  self: Errors =>
 
   implicit object ProcessExpectable extends Expectable[Process] {
     def outStream(f: Process) = f.getOutputStream
@@ -42,7 +25,7 @@ trait ExpectableImplicits {
 
   val BusyWaitPeriod: Long = 15
 
-  implicit class SlaveOps[-F: Expectable](f: F) {
+  implicit class ExpectableOps[-F: Expectable](f: F) {
     def inStream: InputStream = implicitly[Expectable[F]].inStream(f)
 
     def outStream: OutputStream = implicitly[Expectable[F]].outStream(f)
@@ -55,10 +38,8 @@ trait ExpectableImplicits {
 
     def available: Int = inStream.available
 
-
     final def waitForLine(deadline: Long): Result[String] = {
-      @tailrec
-      def go(soFar: Cord): Result[Cord] = {
+      @tailrec def go(soFar: Cord): Result[Cord] = {
         if (System.currentTimeMillis() > deadline) {
           lose(ExpectTimedOut)
         }
@@ -78,29 +59,43 @@ trait ExpectableImplicits {
       go(Cord.empty).map(_.toString())
     }
 
-    def expectDeadline(regex: Regex, deadline: DateTime): Result[String] = {
-      def go(regex: Regex): Result[String] =
-        for (line <- waitForLine(deadline.toDate.getTime);
-             res <- regex.findFirstIn(line) match {
-               case Some(s) => win(s)
-               case None => go(regex)
-             }) yield res
+    private def expectTimeout(regex: Regex, timeout: Duration): Result[String] = {
+      val deadline = System.currentTimeMillis() + timeout.getMillis
+
+      @tailrec def go(regex: Regex): Result[String] = {
+        // I apologize in advance for the ugliness of this method.
+        // I realized that if a line were long enough, this function would result
+        // in a stack overflow if it were not tail recursive. Scala can't optimize
+        // tail recursion with higher order functions, so I did what I could.
+        // TODO: Fix with trampolines.
+        val line = waitForLine(deadline)
+        if (line.isLeft)
+          line
+        else {
+          val regexMatch = line.fold(_ => ???, regex.findFirstIn)
+          if (!regexMatch.isDefined)
+            go(regex)
+          else
+            win(regexMatch.get)
+        }
+      }
 
       go(regex)
     }
 
-    def expectTimeout(regex: Regex, timeout: Duration) = expectDeadline(regex, DateTime.now + timeout)
-
-    def expect(str: String)(implicit timeout: ImplicitDuration): Result[String] = {
-      if (str == "" ||
+    def expect(str: String)(implicit timeout: Duration): Result[String] = {
+      if (str.isEmpty ||
         str.count(ch => Character.isWhitespace(ch) || ch == '\0') == str.length)
         win(str)
       else
-        expectTimeout(new Regex(Regex.quote(str)), timeout.duration)
+        expectTimeout(new Regex(Regex.quote(str)), timeout)
     }
 
-    def expectLine(implicit timeout: ImplicitDuration): Result[String] = {
-      waitForLine(System.currentTimeMillis() + timeout.duration.getMillis)
+    def expect(rgx: Regex)(implicit timeout: Duration): Result[String] =
+      expectTimeout(rgx, timeout)
+
+    def expectLine(implicit timeout: Duration): Result[String] = {
+      waitForLine(System.currentTimeMillis() + timeout.getMillis)
     }
 
     def sendLine(str: String) = send(str + "\r\n")

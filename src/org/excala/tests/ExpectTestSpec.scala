@@ -4,6 +4,7 @@ import java.io._
 
 import com.github.nscala_time.time.Imports._
 import org.excala.Excala._
+import org.excala.Expectable
 import org.scalatest._
 import org.scalatest.matchers.{BePropertyMatchResult, BePropertyMatcher}
 
@@ -14,7 +15,7 @@ import scalaz._
  * Default specification for tests. Contains some convenience methods.
  * Created by Edmund on 2015-01-24.
  */
-trait ExpectTestSpec extends FlatSpec with Matchers with ExpectTags {
+trait ExpectTestSpec extends FlatSpec with Matchers with ExpectTags with TestImplicits {
 
   def timed[A](fun: => A): (A, Long) = {
     val start = System.currentTimeMillis()
@@ -23,7 +24,13 @@ trait ExpectTestSpec extends FlatSpec with Matchers with ExpectTags {
     (result, end - start)
   }
 
-  implicit val millis200 = ImplicitDuration(50.millis)
+  object ZeroDuration {
+    implicit val defaultDuration: Duration = 0 seconds
+  }
+
+  object ShortDuration {
+    implicit val defaultDuration: Duration = 500 millis
+  }
 
   /// Usable as in: result should be a failure
   def failure[A, B] = new BePropertyMatcher[A \/ B] {
@@ -34,6 +41,7 @@ trait ExpectTestSpec extends FlatSpec with Matchers with ExpectTags {
   def success[A, B] = new BePropertyMatcher[A \/ B] {
     def apply(dis: A \/ B) = BePropertyMatchResult(dis.isRight, "success")
   }
+
 
   def nullInputStream: InputStream = new InputStream() {
     override def read() = '0'
