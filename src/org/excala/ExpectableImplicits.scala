@@ -5,12 +5,11 @@ import java.io._
 import com.github.nscala_time.time.Implicits._
 import org.joda.time.{DateTime, Duration}
 
-import scala.annotation.tailrec
-import scala.util.control.TailCalls
-import scala.util.control.TailCalls._
 import scala.util.matching._
+import scalaz.Free.Trampoline
 import scalaz._
 import Scalaz._
+import Trampoline._
 
 /**
  * Created by Edmund on 2015-02-23.
@@ -59,34 +58,34 @@ trait ExpectableImplicits {
     private def expectTimeout(regex: Regex, timeout: Duration): Result[List[String]] = {
       val deadline = System.currentTimeMillis() + timeout.getMillis
 
-      def go(): TailRec[Result[List[String]]] = {
+      def go(): Trampoline[Result[List[String]]] = {
         val line = waitForLine(deadline)
         val regexMatch = line.map(regex.findFirstMatchIn(_))
         regexMatch match {
           case \/-(Some(rMatch)) => done(win(rMatch.subgroups))
-          case \/-(None) => tailcall(go())
+          case \/-(None) => suspend(go())
           case -\/(err) => done(lose(err))
         }
       }
-      go().result
+      go().run
     }
 
     private def expectTimeout[A](string: String)(timeout: Duration): Result[String] = {
       val deadline = System.currentTimeMillis() + timeout.getMillis
 
-      def go(): TailRec[Result[String]] = {
+      def go(): Trampoline[Result[String]] = {
         val line = waitForLine(deadline)
         line match {
           case \/-(ln) =>
             if (ln.contains(string))
               done(win(ln))
             else
-              tailcall(go())
+              suspend(go())
           case -\/(err) =>
             done(lose(err))
         }
       }
-      go().result
+      go().run
     }
 
     def expect(str: String)(implicit timeout: Duration): Result[String] = {
