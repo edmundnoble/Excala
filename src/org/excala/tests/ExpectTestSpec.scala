@@ -59,7 +59,7 @@ trait ExpectTestSpec extends FlatSpec with Matchers with ExpectTags with TestImp
       res
     }
 
-    override def available() = str.length - pos
+    override def available() = 1
   }
 
   case class StringForeverStream(str: String) extends InputStream {

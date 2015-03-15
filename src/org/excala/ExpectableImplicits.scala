@@ -6,8 +6,11 @@ import com.github.nscala_time.time.Implicits._
 import org.joda.time.{DateTime, Duration}
 
 import scala.annotation.tailrec
+import scala.util.control.TailCalls
+import scala.util.control.TailCalls._
 import scala.util.matching._
 import scalaz._
+import Scalaz._
 
 /**
  * Created by Edmund on 2015-02-23.
@@ -39,48 +42,52 @@ trait ExpectableImplicits {
     def available: Int = inStream.available
 
     final def waitForLine(deadline: Long): Result[String] = {
-      @tailrec def go(soFar: Cord): Result[Cord] = {
-        if (System.currentTimeMillis() > deadline) {
-          lose(ExpectTimedOut)
-        }
-        else {
-          if (available == 0) {
-            Thread.sleep(BusyWaitPeriod)
-            go(soFar)
-          } else {
-            val readChar = read()
-            if (readChar == '\n')
-              win(soFar :- readChar)
-            else
-              go(soFar :- readChar)
-          }
+      val builder = new StringBuilder()
+      while (deadline - System.currentTimeMillis > 0) {
+        if (available == 0) {
+          Thread.sleep(Math.max(BusyWaitPeriod, (deadline - System.currentTimeMillis) / 10L))
+        } else {
+          val readChar = read()
+          builder.append(readChar)
+          if (readChar == '\n')
+            return win(builder.toString())
         }
       }
-      go(Cord.empty).map(_.toString())
+      lose(ExpectTimedOut)
     }
 
-    private def expectTimeout(regex: Regex, timeout: Duration): Result[String] = {
+    private def expectTimeout(regex: Regex, timeout: Duration): Result[List[String]] = {
       val deadline = System.currentTimeMillis() + timeout.getMillis
 
-      @tailrec def go(regex: Regex): Result[String] = {
-        // I apologize in advance for the ugliness of this method.
-        // I realized that if a line were long enough, this function would result
-        // in a stack overflow if it were not tail recursive. Scala can't optimize
-        // tail recursion with higher order functions, so I did what I could.
-        // TODO: Fix with trampolines.
+      def go(): Result[List[String]] = {
+        // TODO: Implement with trampolines.
         val line = waitForLine(deadline)
-        if (line.isLeft)
-          line
-        else {
-          val regexMatch = line.fold(_ => ???, regex.findFirstIn)
-          if (!regexMatch.isDefined)
-            go(regex)
-          else
-            win(regexMatch.get)
+        val regexMatch = line.map(regex.findFirstMatchIn(_))
+        regexMatch.fold(lose, {
+          case Some(m) => win(m.subgroups)
+          case None => go()
+        })
+      }
+      go()
+
+    }
+
+    private def expectTimeout[A](string: String)(timeout: Duration): Result[String] = {
+      val deadline = System.currentTimeMillis() + timeout.getMillis
+
+      def go(): TailRec[Result[String]] = {
+        val line = waitForLine(deadline)
+        line match {
+          case \/-(ln) =>
+            if (ln.contains(string))
+              done(win(ln))
+            else
+              tailcall(go())
+          case -\/(err) =>
+            done(lose(err))
         }
       }
-
-      go(regex)
+      go().result
     }
 
     def expect(str: String)(implicit timeout: Duration): Result[String] = {
@@ -88,19 +95,22 @@ trait ExpectableImplicits {
         str.count(ch => Character.isWhitespace(ch) || ch == '\0') == str.length)
         win(str)
       else
-        expectTimeout(new Regex(Regex.quote(str)), timeout)
+        expectTimeout(str)(timeout)
     }
 
-    def expect(rgx: Regex)(implicit timeout: Duration): Result[String] =
+    def expect(rgx: Regex)(implicit timeout: Duration): Result[List[String]] =
       expectTimeout(rgx, timeout)
 
     def expectLine(implicit timeout: Duration): Result[String] = {
       waitForLine(System.currentTimeMillis() + timeout.getMillis)
     }
 
-    def sendLine(str: String) = send(str + "\r\n")
+    def sendLine(str: String): Result[Unit] = send(str + "\r\n")
 
-    def send(str: String) = outStream write (str getBytes "UTF-8")
+    def send(str: String): Result[Unit] = {
+      outStream write (str getBytes "UTF-8")
+      win(())
+    }
 
   }
 

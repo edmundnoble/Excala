@@ -51,10 +51,11 @@ class ExpectTests extends ExpectTestSpec with TestImplicits {
   }
 
   "Expecting a string twice when it's received once" should "fail" in {
-    import ZeroDuration._
+    import ShortDuration._
     val str = "HALLOO"
     val stream = StringOnceStream(str)
-    chain(stream expect str, stream expect str) should be a failure
+    stream expect str should be a success
+    stream expect str should be a failure
   }
 
   "Sending a line" should "send the line and a newline" in {
@@ -71,19 +72,19 @@ class ExpectTests extends ExpectTestSpec with TestImplicits {
 
   "Expecting a string" should "work when it's sent" in {
     val str = "Test"
-    implicit val timeout: Duration = 1 second
+    implicit val timeout: Duration = 5 seconds
     val stream = StringForeverStream(str)
     val result = stream expect str
     result should be a success
   }
 
   "Expecting a regex" should "work when it's sent" in {
-    val regex = "[0-9]+".r
+    val regex = """([0-9]+)""" r
     val stream = StringForeverStream("1234")
-    implicit val timeout: Duration = 1 second
+    implicit val timeout: Duration = 5 seconds
     val result = stream expect regex
     result should be a success
-    result map (_ shouldBe "1234")
+    result map (_ shouldBe List("1234"))
   }
 
   "One complicated-ass expect" should "work" in {
@@ -96,6 +97,5 @@ class ExpectTests extends ExpectTestSpec with TestImplicits {
     n map {
       _ shouldBe "Edmund\n"
     }
-
   }
 }
