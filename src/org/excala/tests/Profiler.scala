@@ -21,6 +21,8 @@ object Profiler extends App with TestImplicits {
     override def available() = str.length
   }
 
+  val ExpectCount = 100000L
+
   val str = "Testing 123"
 
   val stream = new StringForeverStream(str)
@@ -29,10 +31,13 @@ object Profiler extends App with TestImplicits {
 
   val start = System.currentTimeMillis()
   var result = win("")
-  while (i < 100000) {
+  while (i < ExpectCount) {
     implicit val timeout: Duration = (100 millis).toDuration
-    chain(result, stream.expect(str))
+    result = chain(result, stream expect str)
     i += 1
   }
-  println((System.currentTimeMillis() - start) / 100000.0)
+  val finish = System.currentTimeMillis()
+  val elapsedPerExpect = (finish - start) / ExpectCount.toDouble
+  println(s"Elapsed time for $ExpectCount expects: ${finish - start} millis")
+  println(s"Elapsed time per expect: $elapsedPerExpect millis")
 }

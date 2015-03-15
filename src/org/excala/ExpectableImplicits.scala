@@ -37,7 +37,7 @@ trait ExpectableImplicits {
 
     def available: Int = inStream.available
 
-    final def waitForLine(deadline: Long): Result[String] = {
+    private def waitForLine(deadline: Long): Result[String] = {
       val builder = new StringBuilder()
       while (deadline - System.currentTimeMillis > 0) {
         if (available == 0) {
@@ -95,9 +95,9 @@ trait ExpectableImplicits {
     def expect(rgx: Regex)(implicit timeout: Duration): Result[List[String]] =
       expectTimeout(rgx, timeout)
 
-    def expectLine(implicit timeout: Duration): Result[String] = {
+    def expectLine(implicit timeout: Duration): Result[String] =
       waitForLine(System.currentTimeMillis() + timeout.getMillis)
-    }
+
 
     def sendLine(str: String): Result[Unit] = send(str + "\r\n")
 

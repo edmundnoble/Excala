@@ -49,7 +49,7 @@ class ExpectTests extends ExpectTestSpec with TestImplicits {
     nullInputStream expect "\0\0\0\0\0" should be a success
   }
 
-  "Expecting a string twice when it's received once" should "fail" in {
+  "Expecting a string twice when it's received once" should "fail" taggedAs TimedTest in {
     import ShortDuration._
     val str = "HALLOO"
     val stream = StringOnceStream(str)
@@ -96,5 +96,15 @@ class ExpectTests extends ExpectTestSpec with TestImplicits {
     n map {
       _ shouldBe "Edmund\n"
     }
+  }
+
+  "Expecting a string with a bunch of garbage first" should "not stack overflow" taggedAs TimedTest in {
+    import ShortDuration._
+    val filler = "Filler"
+    val expected = "Expected"
+    val filled = List.fill(50000)(filler) :+ expected
+    val stream = StringListStream(filled: _*)
+    val result = stream expect expected
+    result should be a success
   }
 }
