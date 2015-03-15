@@ -89,8 +89,7 @@ trait ExpectableImplicits {
     }
 
     def expect(str: String)(implicit timeout: Duration): Result[String] = {
-      if (str.isEmpty ||
-        str.count(ch => Character.isWhitespace(ch) || ch == '\0') == str.length)
+      if (StringUtils.isNull(str))
         win(str)
       else
         expectTimeout(str)(timeout)
