@@ -11,5 +11,6 @@
     <orderEntry type="library" name="org.scalaz:scalaz-core_2.11:7.1.0" level="project" />
     <orderEntry type="library" name="com.github.nscala-time:nscala-time_2.11:1.6.0" level="project" />
     <orderEntry type="library" name="org.scalatest:scalatest_2.11:2.2.0" level="project" />
+    <orderEntry type="library" name="com.chuusai:shapeless_2.11:2.1.0" level="project" />
   </component>
 </module>
