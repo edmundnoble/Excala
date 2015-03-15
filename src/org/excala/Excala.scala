@@ -9,7 +9,6 @@ import Scalaz._
 
 /**
  * Your one-stop shop for imports.
- * Created by Edmund on 2015-01-23.
  */
 
 object Excala extends Errors with ExpectableImplicits {

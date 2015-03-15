@@ -6,8 +6,6 @@ import org.excala.Expectable
 
 /**
  * Completely unsafe, only for testing purposes.
- *
- * Created by Edmund on 2015-03-01.
  */
 private[tests] trait TestImplicits {
   implicit object OutputStreamExpectable extends Expectable[OutputStream] {

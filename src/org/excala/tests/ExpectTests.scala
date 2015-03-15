@@ -12,7 +12,6 @@ import Scalaz._
 
 /**
  * Tests for expect(...) and variants.
- * Created by Edmund on 2015-03-01.
  */
 class ExpectTests extends ExpectTestSpec with TestImplicits {
   "An Expect" should "not time out before it should" taggedAs TimedTest in {

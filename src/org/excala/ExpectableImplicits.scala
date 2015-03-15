@@ -11,9 +11,6 @@ import scalaz._
 import Scalaz._
 import Trampoline._
 
-/**
- * Created by Edmund on 2015-02-23.
- */
 trait ExpectableImplicits {
   self: Errors =>
 

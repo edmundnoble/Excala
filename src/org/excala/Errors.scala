@@ -4,9 +4,6 @@ import scala.language.implicitConversions
 import scalaz.Scalaz._
 import scalaz._
 
-/**
- * Created by Edmund on 2015-01-23.
- */
 trait Errors {
 
   sealed abstract class Error

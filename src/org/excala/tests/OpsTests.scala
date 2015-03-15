@@ -10,7 +10,6 @@ import Scalaz._
 
 /**
  * Tests for operators like chain(...).
- * Created by Edmund on 2015-03-01.
  */
 class OpsTests extends ExpectTestSpec {
   "Chaining successes" should "return success" in {

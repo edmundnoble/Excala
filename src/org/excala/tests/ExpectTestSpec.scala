@@ -13,7 +13,6 @@ import scalaz._
 
 /**
  * Default specification for tests. Contains some convenience methods.
- * Created by Edmund on 2015-01-24.
  */
 trait ExpectTestSpec extends FlatSpec with Matchers with ExpectTags with TestImplicits {
 

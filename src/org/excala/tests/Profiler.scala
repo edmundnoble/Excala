@@ -7,7 +7,6 @@ import org.excala.Excala._
 
 /**
  * Measures the performance of individual expects, assuming there is no delay between lines.
- * Created by Edmund on 2015-02-24.
  */
 object Profiler extends App with TestImplicits {
 
@@ -31,7 +30,7 @@ object Profiler extends App with TestImplicits {
   val start = System.currentTimeMillis()
   var result = win("")
   while (i < 100000) {
-    implicit val timeout: Duration = ((100 millis) toDuration)
+    implicit val timeout: Duration = (100 millis).toDuration
     chain(result, stream.expect(str))
     i += 1
   }
