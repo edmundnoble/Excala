@@ -59,17 +59,16 @@ trait ExpectableImplicits {
     private def expectTimeout(regex: Regex, timeout: Duration): Result[List[String]] = {
       val deadline = System.currentTimeMillis() + timeout.getMillis
 
-      def go(): Result[List[String]] = {
-        // TODO: Implement with trampolines.
+      def go(): TailRec[Result[List[String]]] = {
         val line = waitForLine(deadline)
         val regexMatch = line.map(regex.findFirstMatchIn(_))
-        regexMatch.fold(lose, {
-          case Some(m) => win(m.subgroups)
-          case None => go()
-        })
+        regexMatch match {
+          case \/-(Some(rMatch)) => done(win(rMatch.subgroups))
+          case \/-(None) => tailcall(go())
+          case -\/(err) => done(lose(err))
+        }
       }
-      go()
-
+      go().result
     }
 
     private def expectTimeout[A](string: String)(timeout: Duration): Result[String] = {
