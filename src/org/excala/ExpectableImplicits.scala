@@ -85,11 +85,40 @@ trait ExpectableImplicits {
       go().run
     }
 
+    private def expectTimeout[A](strings: (String, String))(timeout: Duration): (Result[String], Result[String]) = {
+      val deadline = System.currentTimeMillis() + timeout.getMillis
+
+      def go(): Trampoline[(Result[String], Result[String])] = {
+        val line = waitForLine(deadline)
+        line match {
+          case \/-(ln) =>
+            if (ln.contains(strings._1))
+              done(win(ln), lose(OtherExpect))
+            else if (ln.contains(strings._2))
+              done(lose(OtherExpect), win(ln))
+            else
+              suspend(go())
+          case -\/(err) =>
+            done(lose(err), lose(err))
+        }
+      }
+      go().run
+    }
+
     def expect(str: String)(implicit timeout: Duration): Result[String] = {
       if (StringUtils.isNull(str))
         win(str)
       else
         expectTimeout(str)(timeout)
+    }
+
+    def expect(strs: (String, String))(implicit timeout: Duration): (Result[String], Result[String]) = {
+      if (StringUtils.isNull(strs._1))
+        (win(strs._1), lose(OtherExpect))
+      else if (StringUtils.isNull(strs._2))
+        (lose(OtherExpect), win(strs._2))
+      else
+        expectTimeout(strs)(timeout)
     }
 
     def expect(rgx: Regex)(implicit timeout: Duration): Result[List[String]] =

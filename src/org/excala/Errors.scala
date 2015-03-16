@@ -11,6 +11,8 @@ trait Errors {
   case object ExpectTimedOut extends Error
 
   case object EOF extends Error
+  
+  case object OtherExpect extends Error
 
   case class ExceptionContainer(ex: RuntimeException) extends Error
 

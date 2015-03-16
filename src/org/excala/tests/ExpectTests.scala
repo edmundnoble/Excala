@@ -107,4 +107,15 @@ class ExpectTests extends ExpectTestSpec with TestImplicits {
     val result = stream expect expected
     result should be a success
   }
+
+  "Expect forking" should "work" in {
+    import ShortDuration._
+    val sent = "Sent"
+
+    val notSent = "Not sent"
+    val stream = StringOnceStream(sent)
+    val (successful, notSuccessful) = stream expect (sent, notSent)
+    successful should be a success
+    notSuccessful should be a failure
+  }
 }
